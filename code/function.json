@@ -1,18 +1,18 @@
 {
+  "scriptFile": "__init__.py",
   "bindings": [
     {
       "authLevel": "function",
       "type": "httpTrigger",
       "direction": "in",
-      "name": "req",
-      "methods": ["get", "post"],
-      "route": "code"
+      "methods": [
+        "get",
+        "post"
+      ]
     },
     {
       "type": "http",
-      "direction": "out",
-      "name": "res"
+      "direction": "out"
     }
-  ],
-  "scriptFile": "__init__.py"
+  ]
 }
