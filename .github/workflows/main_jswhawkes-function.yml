@@ -70,6 +70,6 @@ jobs:
           app-name: 'jswhawkes-function'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_627CAEFF9BB24FBD8D7A189A234E00FC }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D0DE65488D934F2887C8B2B1218C0384 }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
