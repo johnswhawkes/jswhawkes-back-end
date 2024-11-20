@@ -1,0 +1,25 @@
+{
+    "version": "2.0",
+    "functionTimeout": "00:05:00",   // Example: Set global function timeout
+    "logging": {
+      "applicationInsights": {
+        "samplingSettings": {
+          "isEnabled": true,       // Enables Application Insights sampling
+          "maxSamplesPerSecond": 5 // Limits the number of samples per second for logs
+        },
+        "logLevel": {
+          "default": "Information" // Log level for the functions (Options: Trace, Debug, Information, Warning, Error)
+        }
+      }
+    },
+    "extensions": {
+      "http": {
+        "maxOutstandingRequests": 100, // The max number of HTTP requests to process concurrently
+        "maxConcurrentRequests": 50    // The max number of concurrent requests that the function can handle
+      }
+    },
+    "concurrency": {
+      "dynamicConcurrencyEnabled": true // Allows the Functions runtime to dynamically adjust the number of concurrent function invocations
+    }
+  }
+  
