@@ -8,11 +8,13 @@
       "methods": [
         "get",
         "post"
-      ]
+      ],
+      "name": "req"
     },
     {
       "type": "http",
-      "direction": "out"
+      "direction": "out",
+      "name": "res"
     }
   ]
 }
