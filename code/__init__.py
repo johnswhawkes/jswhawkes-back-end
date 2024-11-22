@@ -1,12 +1,12 @@
 import os
 import logging
 import azure.functions as func
-from azure.identity import DefaultAzureCredential
 from azure.cosmos import CosmosClient
 from datetime import datetime
 
 # Retrieve Cosmos DB settings from environment variables
 COSMOS_ENDPOINT = os.getenv('COSMOS_ENDPOINT')
+COSMOS_KEY = os.getenv('COSMOS_KEY')  # Add your Cosmos DB primary key in environment variables
 DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')  # Default fallback if env var is missing
 CONTAINER_NAME = os.getenv('CONTAINER_NAME', 'VisitorCount')
 
@@ -14,9 +14,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         logging.info('Processing request for visitor count.')
 
-        # Initialize Cosmos DB client using managed identity
-        credential = DefaultAzureCredential()
-        client = CosmosClient(COSMOS_ENDPOINT, credential=credential)
+        # Initialize Cosmos DB client using connection string
+        client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
         container = client.get_database_client(DATABASE_NAME).get_container_client(CONTAINER_NAME)
 
         # Use today's date as the partition key
