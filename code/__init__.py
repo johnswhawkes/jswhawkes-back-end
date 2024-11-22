@@ -10,7 +10,7 @@ COSMOS_KEY = os.getenv('COSMOS_KEY')  # Add your Cosmos DB primary key in enviro
 DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')  # Default fallback if env var is missing
 CONTAINER_NAME = os.getenv('CONTAINER_NAME', 'VisitorCount')
 
-def main(req: func.HttpRequest, res: func.HttpResponse) -> func.HttpResponse:
+def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         logging.info('Processing request for visitor count.')
 
@@ -31,22 +31,17 @@ def main(req: func.HttpRequest, res: func.HttpResponse) -> func.HttpResponse:
         container.upsert_item({
             "id": visit_date,  # Use visit_date as the unique ID
             "visitDate": visit_date,
-            "visitorCount": visitor_count,
-            "partitionKey": visit_date  # Ensure partition key is correctly defined
+            "visitorCount": visitor_count
         })
 
         logging.info(f"Visitor count for {visit_date}: {visitor_count}")
 
-        # Return response with updated visitor count
-        res.set_body(f"Visitor count updated: {visitor_count}")
-        res.status_code = 200
-        return res
+        return func.HttpResponse(f"Visitor count updated: {visitor_count}", status_code=200)
     
     except Exception as e:
         logging.error(f"Error occurred: {e}")
-        res.set_body(f"Error: {str(e)}")
-        res.status_code = 500
-        return res
+        return func.HttpResponse(f"Error: {str(e)}", status_code=500)
+
 
 def get_visitor_count(container, visit_date):
     # Try to retrieve the existing visitor count for the current date
