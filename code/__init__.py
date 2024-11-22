@@ -1,3 +1,6 @@
+pip install azure-cosmos
+pip install azure-functions
+
 import os
 import logging
 import azure.functions as func
