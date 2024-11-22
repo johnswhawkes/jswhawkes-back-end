@@ -1,7 +1,7 @@
 import os
 import logging
 import azure.functions as func
-from azure.cosmos import CosmosClient
+from azure.cosmos import CosmosClient, exceptions
 from datetime import datetime
 
 # Retrieve Cosmos DB settings from environment variables
@@ -10,7 +10,7 @@ COSMOS_KEY = os.getenv('COSMOS_KEY')  # Add your Cosmos DB primary key in enviro
 DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')  # Default fallback if env var is missing
 CONTAINER_NAME = os.getenv('CONTAINER_NAME', 'VisitorCount')
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+def main(req: func.HttpRequest, res: func.HttpResponse) -> func.HttpResponse:
     try:
         logging.info('Processing request for visitor count.')
 
@@ -31,22 +31,31 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         container.upsert_item({
             "id": visit_date,  # Use visit_date as the unique ID
             "visitDate": visit_date,
-            "visitorCount": visitor_count
+            "visitorCount": visitor_count,
+            "partitionKey": visit_date  # Ensure partition key is correctly defined
         })
 
         logging.info(f"Visitor count for {visit_date}: {visitor_count}")
 
-        return func.HttpResponse(f"Visitor count updated: {visitor_count}", status_code=200)
+        # Return response with updated visitor count
+        res.set_body(f"Visitor count updated: {visitor_count}")
+        res.status_code = 200
+        return res
     
     except Exception as e:
         logging.error(f"Error occurred: {e}")
-        return func.HttpResponse(f"Error: {str(e)}", status_code=500)
+        res.set_body(f"Error: {str(e)}")
+        res.status_code = 500
+        return res
 
 def get_visitor_count(container, visit_date):
     # Try to retrieve the existing visitor count for the current date
     try:
-        item = container.read_item(visit_date, partition_key=visit_date)
+        item = container.read_item(item=visit_date, partition_key=visit_date)
         return item.get("visitorCount", 0)  # Return current count or 0 if not found
-    except Exception as e:
+    except exceptions.CosmosResourceNotFoundError:
         logging.warning(f"Could not find existing visitor count for {visit_date}. Initializing count.")
         return 0  # Initialize count to 0 if the item does not exist
+    except Exception as e:
+        logging.error(f"Error reading visitor count for {visit_date}: {e}")
+        return 0  # Default to 0 in case of other exceptions
