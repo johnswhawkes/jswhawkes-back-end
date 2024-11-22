@@ -36,10 +36,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Visitor count for {visit_date}: {visitor_count}")
 
+        # Return the response directly using $return
         return func.HttpResponse(f"Visitor count updated: {visitor_count}", status_code=200)
     
     except Exception as e:
-        logging.error(f"Error occurred: {e}")
+        logging.error(f"Error occurred: {str(e)}")
+        # Return error response directly using $return
         return func.HttpResponse(f"Error: {str(e)}", status_code=500)
 
 
