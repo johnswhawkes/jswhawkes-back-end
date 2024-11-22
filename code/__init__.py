@@ -3,6 +3,7 @@ import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient, exceptions
 from datetime import datetime
+import json  # Importing json module to format the response
 
 # Retrieve Cosmos DB settings from environment variables
 COSMOS_ENDPOINT = os.getenv('COSMOS_ENDPOINT')
@@ -36,13 +37,21 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Visitor count for {visit_date}: {visitor_count}")
 
-        # Return the response directly using $return
-        return func.HttpResponse(f"{visitor_count}", status_code=200)
+        # Return the response in JSON format
+        return func.HttpResponse(
+            json.dumps({"count": visitor_count}),  # Return a JSON response
+            status_code=200,
+            mimetype="application/json"  # Explicitly set the MIME type to JSON
+        )
     
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")
-        # Return error response directly using $return
-        return func.HttpResponse(f"Error: {str(e)}", status_code=500)
+        # Return error response in JSON format
+        return func.HttpResponse(
+            json.dumps({"error": str(e)}),  # Return an error message in JSON format
+            status_code=500,
+            mimetype="application/json"
+        )
 
 
 def get_visitor_count(container, visit_date):
