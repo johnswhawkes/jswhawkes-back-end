@@ -31,15 +31,14 @@ jobs:
           python -m venv venv
           source venv/bin/activate
 
-          - name: 'Resolve Project Dependencies Using Pip'
-          shell: bash
-          run: |
-            pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt --target=".python_packages/lib/site-packages"
-            pip install azure-functions
-            pip install azure-cosmos
-            popd
+      - name: Install dependencies
+        run: |  
+          pushd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+          pip install azure-functions
+          pip install azure-cosmos
+          popd
       # Optional: Add step to run tests here
 
       - name: Zip artifact for deployment
