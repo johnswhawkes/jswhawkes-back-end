@@ -85,4 +85,3 @@ def get_visitor_count(container, visit_date):
     except Exception as e:
         logging.error(f"Error reading visitor count for {visit_date}: {e}")
         return 0
-\
