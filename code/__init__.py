@@ -34,13 +34,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         container.upsert_item({
             "id": visit_date,  # Unique ID for the date
             "visitDate": visit_date,
-            "visitorCount": daily_visitor_count
+            "visitorCount": daily_visitor_count,
+            "partitionKey": visit_date  # Use visit_date as partition key
         })
 
         # Update the total visitor count (use "all-time" as partition key)
         container.upsert_item({
-            "id": totalCount,  # Static ID for total count
-            "partitionKey": all-time,  # Use "all-time" as partition key
+            "id": "totalCount",  # Static ID for total count
+            "partitionKey": "all-time",  # Use "all-time" as partition key
             "totalVisitorCount": total_visitor_count
         })
 
@@ -76,9 +77,6 @@ def get_total_count(container):
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
-
-
-
 
 def get_visitor_count(container, visit_date):
     # Try to retrieve the existing visitor count for the current date
