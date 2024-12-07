@@ -39,8 +39,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # Update the total visitor count (use "all-time" as partition key)
         container.upsert_item({
-            "id": "totalCount",  # Static ID for total count
-            "partitionKey": "all-time",  # Use "all-time" as partition key
+            "id": totalCount,  # Static ID for total count
+            "partitionKey": all-time,  # Use "all-time" as partition key
             "totalVisitorCount": total_visitor_count
         })
 
