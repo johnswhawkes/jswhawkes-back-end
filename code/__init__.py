@@ -22,9 +22,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # Use today's date as the partition key
         visit_date = datetime.utcnow().strftime('%Y-%m-%d')
 
-        # Get the current daily count and update it
+        # Get the current daily count and total count
         daily_visitor_count = get_visitor_count(container, visit_date)
+        total_visitor_count = get_total_count(container)
+
+        # Increment both counters
         daily_visitor_count += 1
+        total_visitor_count += 1
 
         # Update the daily visitor count
         container.upsert_item({
@@ -33,8 +37,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "visitorCount": daily_visitor_count
         })
 
-        # Calculate the total visitor count by summing all visitor counts
-        total_visitor_count = calculate_total_count(container)
+        # Update the total visitor count (use "all-time" as partition key)
+        container.upsert_item({
+            "id": "totalCount",  # Static ID for total count
+            "totalVisitorCount": total_visitor_count  # No need for partitionKey here
+        }, partition_key="all-time")  # Specify the partition key during the operation
 
         logging.info(f"Daily count for {visit_date}: {daily_visitor_count}")
         logging.info(f"Total visitor count: {total_visitor_count}")
@@ -57,22 +64,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-def calculate_total_count(container):
+def get_total_count(container):
     try:
-        # Query all items to sum the "visitorCount" field
-        total_count = 0
-        query = "SELECT c.visitorCount FROM c WHERE c.visitorCount IS NOT NULL"
-        
-        # Execute the query
-        items = container.query_items(query=query, enable_cross_partition_query=True)
-        
-        # Sum the visitor counts from all items
-        for item in items:
-            total_count += item.get("visitorCount", 0)
+        # Run the aggregate query to sum all visitor counts
+        query = "SELECT SUM(c.visitorCount) as totalVisitorCount FROM c WHERE NOT IS_NULL(c.visitorCount)"
+        result = list(container.query_items(query=query, enable_cross_partition_query=True))
 
-        logging.info(f"Calculated total visitor count: {total_count}")
-        return total_count
-    
+        # Get the total visitor count from the query result
+        total_visitor_count = result[0].get("totalVisitorCount", 0) if result else 0
+        return total_visitor_count
+
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
