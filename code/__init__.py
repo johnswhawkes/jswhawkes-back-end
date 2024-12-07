@@ -37,10 +37,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "visitorCount": daily_visitor_count
         })
 
-        # Update the total visitor count (stored under a static ID)
+        # Update the total visitor count (use "all-time" as partition key)
         container.upsert_item({
             "id": "totalCount",  # Static ID for total count
-            "visitDate": "all-time",
+            "partitionKey": "all-time",  # Use "all-time" as partition key
             "totalVisitorCount": total_visitor_count
         })
 
@@ -67,8 +67,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def get_total_count(container):
     try:
-        # Retrieve the total visitor count
-        item = container.read_item(item="totalCount", partition_key="totalCount")
+        # Retrieve the total visitor count using the "all-time" partition key
+        item = container.read_item(item="totalCount", partition_key="all-time")
         return item.get("totalVisitorCount", 0)
     except exceptions.CosmosResourceNotFoundError:
         logging.warning("Total visitor count not found. Initializing to 0.")
@@ -76,6 +76,7 @@ def get_total_count(container):
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
+
 
 
 
