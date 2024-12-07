@@ -1,3 +1,16 @@
+import os
+import logging
+import azure.functions as func
+from azure.cosmos import CosmosClient, exceptions
+from datetime import datetime
+import json  # Importing json module to format the response
+
+# Retrieve Cosmos DB settings from environment variables
+COSMOS_ENDPOINT = os.getenv('COSMOS_ENDPOINT')
+COSMOS_KEY = os.getenv('COSMOS_KEY')  # Add your Cosmos DB primary key in environment variables
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')  # Default fallback if env var is missing
+CONTAINER_NAME = os.getenv('CONTAINER_NAME', 'VisitorCount')
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         logging.info('Processing request for visitor count.')
@@ -63,3 +76,17 @@ def get_total_count(container):
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
+
+
+
+def get_visitor_count(container, visit_date):
+    # Try to retrieve the existing visitor count for the current date
+    try:
+        item = container.read_item(item=visit_date, partition_key=visit_date)
+        return item.get("visitorCount", 0)  # Return current count or 0 if not found
+    except exceptions.CosmosResourceNotFoundError:
+        logging.warning(f"Could not find existing visitor count for {visit_date}. Initializing count.")
+        return 0  # Initialize count to 0 if the item does not exist
+    except Exception as e:
+        logging.error(f"Error reading visitor count for {visit_date}: {e}")
+        return 0  # Default to 0 in case of other exceptions
