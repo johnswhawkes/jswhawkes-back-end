@@ -3,12 +3,12 @@ import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient, exceptions
 from datetime import datetime
-import json  # Importing json module to format the response
+import json
 
 # Retrieve Cosmos DB settings from environment variables
 COSMOS_ENDPOINT = os.getenv('COSMOS_ENDPOINT')
-COSMOS_KEY = os.getenv('COSMOS_KEY')  # Add your Cosmos DB primary key in environment variables
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')  # Default fallback if env var is missing
+COSMOS_KEY = os.getenv('COSMOS_KEY')
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'VisitCounterDB')
 CONTAINER_NAME = os.getenv('CONTAINER_NAME', 'VisitorCount')
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -34,15 +34,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         container.upsert_item({
             "id": visit_date,  # Unique ID for the date
             "visitDate": visit_date,
-            "visitorCount": daily_visitor_count,
-            "partitionKey": visit_date  # Use visit_date as partition key
+            "visitorCount": daily_visitor_count
         })
 
         # Update the total visitor count (use "all-time" as partition key)
         container.upsert_item({
             "id": "totalCount",  # Static ID for total count
-            "partitionKey": "all-time",  # Use "all-time" as partition key
-            "totalVisitorCount": total_visitor_count
+            "totalVisitorCount": total_visitor_count  # Do not include "partitionKey"
         })
 
         logging.info(f"Daily count for {visit_date}: {daily_visitor_count}")
@@ -73,19 +71,24 @@ def get_total_count(container):
         return item.get("totalVisitorCount", 0)
     except exceptions.CosmosResourceNotFoundError:
         logging.warning("Total visitor count not found. Initializing to 0.")
+        # Initialize the total count if it doesn't exist
+        container.upsert_item({
+            "id": "totalCount", 
+            "totalVisitorCount": 0
+        })
         return 0
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
 
 def get_visitor_count(container, visit_date):
-    # Try to retrieve the existing visitor count for the current date
     try:
+        # Retrieve the existing visitor count for the current date
         item = container.read_item(item=visit_date, partition_key=visit_date)
-        return item.get("visitorCount", 0)  # Return current count or 0 if not found
+        return item.get("visitorCount", 0)
     except exceptions.CosmosResourceNotFoundError:
         logging.warning(f"Could not find existing visitor count for {visit_date}. Initializing count.")
-        return 0  # Initialize count to 0 if the item does not exist
+        return 0
     except Exception as e:
         logging.error(f"Error reading visitor count for {visit_date}: {e}")
-        return 0  # Default to 0 in case of other exceptions
+        return 0
