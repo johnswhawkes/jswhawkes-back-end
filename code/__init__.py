@@ -22,13 +22,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # Use today's date as the partition key
         visit_date = datetime.utcnow().strftime('%Y-%m-%d')
 
-        # Get the current daily count and total count
+        # Get the current counts (daily and total)
         daily_visitor_count = get_visitor_count(container, visit_date)
         total_visitor_count = get_total_count(container)
 
-        # Increment both counters
+        # Increment the daily count
         daily_visitor_count += 1
-        total_visitor_count += 1
 
         # Update the daily visitor count
         container.upsert_item({
@@ -36,12 +35,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "visitDate": visit_date,
             "visitorCount": daily_visitor_count
         })
-
-        # Update the total visitor count (use "all-time" as partition key)
-        container.upsert_item({
-            "id": "totalCount",  # Static ID for total count
-            "totalVisitorCount": total_visitor_count  # No need for partitionKey here
-        }, partition_key="all-time")  # Specify the partition key during the operation
 
         logging.info(f"Daily count for {visit_date}: {daily_visitor_count}")
         logging.info(f"Total visitor count: {total_visitor_count}")
@@ -66,14 +59,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def get_total_count(container):
     try:
-        # Run the aggregate query to sum all visitor counts
-        query = "SELECT SUM(c.visitorCount) as totalVisitorCount FROM c WHERE NOT IS_NULL(c.visitorCount)"
+        # Retrieve the total visitor count by aggregating all items
+        query = "SELECT SUM(c.visitorCount) AS total FROM c"
         result = list(container.query_items(query=query, enable_cross_partition_query=True))
-
-        # Get the total visitor count from the query result
-        total_visitor_count = result[0].get("totalVisitorCount", 0) if result else 0
-        return total_visitor_count
-
+        return result[0].get("total", 0) if result else 0
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
@@ -82,7 +71,7 @@ def get_visitor_count(container, visit_date):
     try:
         # Retrieve the existing visitor count for the current date
         item = container.read_item(item=visit_date, partition_key=visit_date)
-        return item.get("visitorCount", 0)
+        return item.get("visitorCount", 0)  # Return current count or 0 if not found
     except exceptions.CosmosResourceNotFoundError:
         logging.warning(f"Could not find existing visitor count for {visit_date}. Initializing count.")
         return 0
