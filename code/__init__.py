@@ -59,10 +59,17 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def get_total_count(container):
     try:
-        # Retrieve the total visitor count by aggregating all items
-        query = "SELECT SUM(c.visitorCount) AS total FROM c"
+        # Retrieve the total visitor count by aggregating all items with the correct query format
+        query = "SELECT VALUE SUM(c.visitorCount) FROM c"
+        
+        # Perform the query with cross-partition enabled (safe here, even for a single partition)
         result = list(container.query_items(query=query, enable_cross_partition_query=True))
-        return result[0].get("total", 0) if result else 0
+
+        # Check if any results exist
+        if result:
+            return result[0]  # Since it's a single aggregate value, we return the first element
+        else:
+            return 0
     except Exception as e:
         logging.error(f"Error reading total visitor count: {e}")
         return 0
@@ -78,3 +85,4 @@ def get_visitor_count(container, visit_date):
     except Exception as e:
         logging.error(f"Error reading visitor count for {visit_date}: {e}")
         return 0
+\
